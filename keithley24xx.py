@@ -36,10 +36,12 @@ class RS232_Keithley24xx(serial.Serial):
         line = bytearray()
         while True:
             c = self.read(1)
-            if not c or c == '\r' or (size and len(line) >= size):
+            print(c)
+            if ((not c) or (c == b'\r') or (size and len(line) >= size)):
                 break
-            if c not in ['\x11', '\x13', '\x0a']:
+            if c not in [b'\x11', b'\x13', b'\x0a']:
                 line += c
+                print(line)
         if not line:
             print('timeout!')
 		# print line
@@ -48,7 +50,7 @@ class RS232_Keithley24xx(serial.Serial):
 
     def ask_cmd( self, cmdstr ):
         self.flushInput()
-        self.write(str.encode(cmdstr + "\r"))
+        self.write(str.encode(cmdstr + "\r", encoding='ascii'))
 #		self.flush()
         resp = self.readline()
 #		print len(resp), binascii.hexlify(resp)
@@ -60,29 +62,30 @@ class RS232_Keithley24xx(serial.Serial):
         errs = []
         while True:	
             emsg = self.ask_cmd(":STAT:QUE?")
-            emsg = str(emsg)
-            if emsg.split(',')[0] == '0':
+            print(emsg[0])
+            if emsg[0] == 48:
                 break
             errs += [emsg]
         return errs
 
     def wait_until_cmd_done(self):
         while True:
-            self.write("*OPC?\r")
+            self.write(str.encode("*OPC?\r"))
             while True:
                 resp = self.readline()
                 if len(resp) != 0:
                     break
                 print('.',)
-            if resp[0] == '1':
+            print(resp[0]) #returned 49
+            if resp[0] == 49:
                 return
             sleep(0.2)
             print('~')
 
     def send_cmd(self, cmdstr):
 		#		print( cmdstr )
-        self.write(str.encode("*CLS\r"))
-        self.write(str.encode(cmdstr + '\r'))
+        self.write(str.encode("*CLS\r", encoding='ascii'))
+        self.write(cmdstr + b'\r')
         self.flush()
         sleep(0.02)
         errs = self.get_errs()
@@ -93,21 +96,21 @@ class RS232_Keithley24xx(serial.Serial):
         self.wait_until_cmd_done()
 
     def device_info(self):
-        self.run_cmd("*CLS")
+        self.run_cmd(str.encode("*CLS"))
         idstr = self.ask_cmd("*IDN?")
         print(self.port, "is", idstr)
-        return (x.strip() for x in idstr.split(',')[:4])
+        return (x.strip() for x in idstr.split(b',')[:4])
 
     def clear_instrument(self):
         self.flushInput()
-        self.write(str.encode('\x03\r'))  # control-c clears any half-sent commands
+        self.write(str.encode('\x03\r', encoding='ascii'))  # control-c clears any half-sent commands
         self.flush()
         self.readline()		# it responds with "\x13DCL\x11\r\n" for some reason
 
-        self.run_cmd("*RST")  # Reset instrument to default parameters.
+        self.run_cmd(str.encode("*RST", encoding='ascii'))  # Reset instrument to default parameters.
         manufacturer, model, serialnum, fw_rev = self.device_info()
 
-        assert 'MODEL 24' in model
+        assert b'MODEL 6430' in model, print(model)
 
     def read_ohms(self):
         self.clear_instrument()

@@ -123,7 +123,7 @@ if __name__ == '__main__':
     # logname = runName+waferNum+name+ "-SNMOS-Final"
     #blue_sweep_payload = initialize()
     time.sleep(2)	
-    smu = RS232_Keithley24xx.discover_connected( baudrate=57600 )
+    smu = RS232_Keithley24xx.discover_connected( baudrate=9600 )
     print(smu)
 # 	with smu[0] as source_dev, smu[1] as meter_dev:
 # 		sc =  Serial_Com()
