@@ -125,18 +125,18 @@ if __name__ == '__main__':
     time.sleep(2)	
     smu = RS232_Keithley24xx.discover_connected( baudrate=9600 )
     print(smu)
-# 	with smu[0] as source_dev, smu[1] as meter_dev:
-# 		sc =  Serial_Com()
-# 		nplc = 0.02
-# 		v_start = 0.5
-# 		v_stop = 1.5
-# 		n_pts = 3
-# 		v_step = float( v_stop - v_start )/(n_pts-1)
-# 		
-# 		print 'programming SOURCE!'
-# 		for cmd in str2lines( SOURCE_SETUP.format( **locals() ) ):
-# #			print cmd
-# 			source_dev.send_cmd( cmd )
+    with smu[0] as source_dev:
+#        sc =  Serial_Com()
+        nplc = 0.02
+        v_start = 0.5
+        v_stop = 1.5
+        n_pts = 3
+        v_step = float( v_stop - v_start )/(n_pts-1)
+		
+        print('programming SOURCE!')
+        for cmd in str2lines( SOURCE_SETUP.format( **locals() ) ):
+            print(cmd)
+            source_dev.send_cmd(str.encode(cmd))
 # 		
 # 		print 'programming METER!'
 # 		for cmd in str2lines( METER_SETUP.format( **locals() ) ):

@@ -36,15 +36,15 @@ class RS232_Keithley24xx(serial.Serial):
         line = bytearray()
         while True:
             c = self.read(1)
-            print(c)
+            #print(c)
             if ((not c) or (c == b'\r') or (size and len(line) >= size)):
                 break
             if c not in [b'\x11', b'\x13', b'\x0a']:
                 line += c
-                print(line)
+                #print(line)
         if not line:
             print('timeout!')
-		# print line
+        print(line)
         return bytes(line)
 
 
@@ -85,6 +85,8 @@ class RS232_Keithley24xx(serial.Serial):
     def send_cmd(self, cmdstr):
 		#		print( cmdstr )
         self.write(str.encode("*CLS\r", encoding='ascii'))
+        #cmdstr = str(cmdstr)
+        print(cmdstr)
         self.write(cmdstr + b'\r')
         self.flush()
         sleep(0.02)
@@ -116,49 +118,49 @@ class RS232_Keithley24xx(serial.Serial):
         self.clear_instrument()
 
 #		run_cmd( self. ":FORM:SREG HEX" )
-        self.run_cmd(":SENS:FUNC 'RES'")  # Select ohms measurement function.
-        self.run_cmd(":SENS:RES:NPLC 1")  # Set measurement speed to 1 PLC.
-        self.run_cmd(":SENS:RES:MODE MAN")  # Select manual ohms mode.
-        self.run_cmd(":SOUR:FUNC CURR")  # Select current source function.
-        self.run_cmd(":SOUR:CURR 0.01")  # Set source to output 10mA.
-        self.run_cmd(":SOUR:CLE:AUTO ON")  # Enable source auto output-off.
-        self.run_cmd(":SENS:VOLT:PROT 10")  # Set 10V compliance limit.
-        self.run_cmd(":TRIG:COUN 1")  # Set to perform one measurement.
-        self.run_cmd(":FORM:ELEM RES")  # Set to output ohms reading to PC.
+        self.run_cmd(str.encode(":SENS:FUNC 'RES'"))  # Select ohms measurement function.
+        self.run_cmd(str.encode(":SENS:RES:NPLC 1"))  # Set measurement speed to 1 PLC.
+        self.run_cmd(str.encode(":SENS:RES:MODE MAN"))  # Select manual ohms mode.
+        self.run_cmd(str.encode(":SOUR:FUNC CURR"))  # Select current source function.
+        self.run_cmd(str.encode(":SOUR:CURR 0.01"))  # Set source to output 10mA.
+        self.run_cmd(str.encode(":SOUR:CLE:AUTO ON"))  # Enable source auto output-off.
+        self.run_cmd(str.encode(":SENS:VOLT:PROT 10"))  # Set 10V compliance limit.
+        self.run_cmd(str.encode(":TRIG:COUN 1"))  # Set to perform one measurement.
+        self.run_cmd(str.encode(":FORM:ELEM RES"))  # Set to output ohms reading to PC.
 
     def setup_voltage_sweep(self, start, stop, n_pts, rsense=None):
 		#		self.run_cmd( ":TRAC:POIN MAX")
 		#		self.run_cmd( ":TRAC:FEED SENS")
-        self.run_cmd(":SENS:FUNC:CONC OFF")
-        self.run_cmd(":SOUR:FUNC VOLT")
-        self.run_cmd(":SENS:FUNC 'CURR:DC'")
-        self.run_cmd(":SENS:CURR:PROT 1.0")
+        self.run_cmd(str.encode(":SENS:FUNC:CONC OFF"))
+        self.run_cmd(str.encode(":SOUR:FUNC VOLT"))
+        self.run_cmd(str.encode(":SENS:FUNC 'CURR:DC'"))
+        self.run_cmd(str.encode(":SENS:CURR:PROT 1.0"))
 #		self.run_cmd( ":SOUR:CLE:AUTO ON")
-        self.run_cmd(":SOUR:VOLT:STAR %f" % start)
-        self.run_cmd(":SOUR:VOLT:STOP %f" % stop)
-        self.run_cmd(":SOUR:VOLT:STEP %f" % (float(stop-start)/(n_pts-1)))
-        self.run_cmd(":SOUR:VOLT:MODE SWE")
-        self.run_cmd(":FORM:ELEM CURR")
-        self.run_cmd(":SOUR:SWEEP:RANG BEST")
-        self.run_cmd(":SOUR:SWEEP:SPAC LIN")
+        self.run_cmd(str.encode(":SOUR:VOLT:STAR %f" % start))
+        self.run_cmd(str.encode(":SOUR:VOLT:STOP %f" % stop))
+        self.run_cmd(str.encode(":SOUR:VOLT:STEP %f" % (float(stop-start)/(n_pts-1))))
+        self.run_cmd(str.encode(":SOUR:VOLT:MODE SWE"))
+        self.run_cmd(str.encode(":FORM:ELEM CURR"))
+        self.run_cmd(str.encode(":SOUR:SWEEP:RANG BEST"))
+        self.run_cmd(str.encode(":SOUR:SWEEP:SPAC LIN"))
 	#:SOUR:SWE:POIN <n>
         if rsense is not None:
-            self.run_cmd(":SYST:RSEN " + ("ON" if rsense else "OFF"))
-        self.run_cmd(":SOUR:SWEEP:DIRECTION UP")
-        self.run_cmd(":TRIG:COUN %d" % n_pts)
-        self.run_cmd(":SOUR:DEL 0.001")
+            self.run_cmd(str.encode(":SYST:RSEN " + ("ON" if rsense else "OFF")))
+        self.run_cmd(str.encode(":SOUR:SWEEP:DIRECTION UP"))
+        self.run_cmd(str.encode(":TRIG:COUN %d" % n_pts))
+        self.run_cmd(str.encode(":SOUR:DEL 0.001"))
 
     def set_data_fields(self, *itemlist):
         x = ', '.join([a.upper() for a in itemlist])
-        self.run_cmd(":FORM:ELEM " + x)
+        self.run_cmd(str.encode(":FORM:ELEM " + x))
 
     def set_output(self, state):
         state = ensure_ON_OFF(state)
-        self.run_cmd(":OUTP " + state)
+        self.run_cmd(str.encode(":OUTP " + state))
 
     def set_panel(self, state):
         state = ensure_ON_OFF(state)
-        self.run_cmd(":DISP:ENAB " + state)
+        self.run_cmd(str.encode(":DISP:ENAB " + state))
 
     def initiate(self):
         self.write(":INIT\r")
@@ -174,36 +176,36 @@ class RS232_Keithley24xx(serial.Serial):
         return result
 
     def setup_fixed_V_measure_I(self, limit_I=1.0):
-        self.run_cmd(":SOUR:FUNC VOLT")
-        self.run_cmd(":SENS:FUNC 'CURR:DC'")
-        self.run_cmd(":SENS:CURR:PROT %f" % limit_I)
-        self.run_cmd(":SOUR:VOLT:MODE FIXED")
+        self.run_cmd(str.encode(":SOUR:FUNC VOLT"))
+        self.run_cmd(str.encode(":SENS:FUNC 'CURR:DC'"))
+        self.run_cmd(str.encode(":SENS:CURR:PROT %f" % limit_I))
+        self.run_cmd(str.encode(":SOUR:VOLT:MODE FIXED"))
 
     def setup_fixed_I_measure_V(self, limit_V=5.0):
-        self.run_cmd(":SOUR:FUNC CURR")
-        self.run_cmd(":SENS:FUNC 'VOLT:DC'")
-        self.run_cmd(":SENS:VOLT:PROT %f" % limit_V)
-        self.run_cmd(":SOUR:CURR:MODE FIXED")
+        self.run_cmd(str.encode(":SOUR:FUNC CURR"))
+        self.run_cmd(str.encode(":SENS:FUNC 'VOLT:DC'"))
+        self.run_cmd(str.encode(":SENS:VOLT:PROT %f" % limit_V))
+        self.run_cmd(str.encode(":SOUR:CURR:MODE FIXED"))
 
     def set_fixed_V(self, V):
-        self.run_cmd(":SOUR:VOLT:LEV:IMM %f" % V)
+        self.run_cmd(str.encode(":SOUR:VOLT:LEV:IMM %f" % V))
 
     def set_fixed_I(self, I):
-        self.run_cmd(":SOUR:CURR:LEV:IMM %f" % I)
+        self.run_cmd(str.encode(":SOUR:CURR:LEV:IMM %f" % I))
 
     def set_sense_current_range(self, imax=None):
         if not imax:
-            self.run_cmd(":SENS:CURR:RANG:AUTO ON")
+            self.run_cmd(str.encode(":SENS:CURR:RANG:AUTO ON"))
         else:
-            self.run_cmd(":SENS:CURR:RANG:AUTO OFF")
-            self.run_cmd(":SENS:CURR:RANG:UPP % f" % imax)
+            self.run_cmd(str.encode(":SENS:CURR:RANG:AUTO OFF"))
+            self.run_cmd(str.encode(":SENS:CURR:RANG:UPP % f" % imax))
 
     def set_sense_voltage_range(self, vmax=None):
         if not vmax:
-            self.run_cmd(":SENS:VOLT:RANG:AUTO ON")
+            self.run_cmd(str.encode(":SENS:VOLT:RANG:AUTO ON"))
         else:
-            self.run_cmd(":SENS:VOLT:RANG:AUTO OFF")
-            self.run_cmd(":SENS:VOLT:RANG:UPP % f" % vmax)
+            self.run_cmd(str.encode(":SENS:VOLT:RANG:AUTO OFF"))
+            self.run_cmd(str.encode(":SENS:VOLT:RANG:UPP % f" % vmax))
 
     def set_measurement_integration(self, n_line_cycles):
         self.send_cmd(':SENS:CURR:DC:NPLC %f' % n_line_cycles)
