@@ -19,8 +19,8 @@ def plot_data(xplot, yplot, title, xlabel, ylabel):
 
     plt.scatter(xplot,yplot)
 
-    plt.xlim(0,1000)
-    plt.ylim(0,100)
+    plt.xlim(0,10)
+    plt.ylim(0,25000)
 
     plt.title(title)
     plt.xlabel(xlabel)
@@ -56,8 +56,8 @@ TRY_SWEEP = """
 :SOUR:SWEEP:RANG BEST
 :SOUR:SWEEP:SPAC LIN
 :SOUR:DEL 0.001
-:TRIG:COUN 3
-:FORM:ELEM VOLT, CURR, RES"""
+:TRIG:COUN {n_pts}
+:FORM:ELEM VOLT, RES, CURR"""
 
 APPLY_VOLTAGE = """
 *RST
@@ -145,6 +145,22 @@ version = '2'
 #L = Loading()
 #DL = DataLogging()
 
+def splitArray(numFields, samples):
+    arrays = []
+    i = 0
+    while i < numFields:
+        arrays.append([])
+        i += 1
+    print(arrays)
+    i = 0
+    for value in samples:
+        arrays[i].append(value)
+        i += 1
+        if i == numFields:
+            i = 0
+    return arrays
+    
+
 def str2lines(str):
 	return [ l.strip() for l in str.split('\n') if l ]
 
@@ -186,7 +202,7 @@ if __name__ == '__main__':
         nplc = 0.02
         v_start = 0.5
         v_stop = 2
-        n_pts = 3
+        n_pts = 100
         v_step = float( v_stop - v_start )/(n_pts-1)
 		
         print('programming SOURCE!')
@@ -195,6 +211,11 @@ if __name__ == '__main__':
             source_dev.send_cmd(str.encode(cmd))
         read_resp = source_dev.ask_cmd(":READ?")
         print("Response: " + str(read_resp))
+        s = np.fromstring( read_resp, sep=',' )
+        print(str(s))
+        s = splitArray(3, s)
+        print(s)
+        plot_data(s[0], s[2], "Voltage vs. Current", "Volts", "Current")
         #source_dev.send_cmd(str.encode(":OUTP ON"))
         #source_dev.send_cmd(str.encode(":READ?"))
         #time.sleep(5)
