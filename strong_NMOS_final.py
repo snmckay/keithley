@@ -28,7 +28,7 @@ def plot_data(xplot, yplot, title, xlabel, ylabel):
 
     plt.show()
     
-EXAMPLE = """
+SIMPLE_RESISTANCE = """
 *RST
 :SENS:FUNC 'RES'
 :SENS:RES:NPLC 1
@@ -38,8 +38,26 @@ EXAMPLE = """
 :SOUR:CLE:AUTO ON
 :SENS:VOLT:PROT 10
 :TRIG:COUN 1
-:FORM:ELEM RES
-:READ?"""
+:FORM:ELEM RES"""
+
+TRY_SWEEP = """
+*RST
+:ARM:COUN 1
+:ARM:SOUR IMM
+:SENS:FUNC 'RES'
+:SENS:RES:NPLC 1
+:SENS:RES:MODE MAN
+:SOUR:FUNC VOLT
+:SOUR:VOLT:STAR {v_start}
+:SOUR:VOLT:STOP {v_stop}
+:SOUR:VOLT:STEP {v_step}
+:SOUR:VOLT:MODE SWE
+:SOUR:CLE:AUTO ON
+:SOUR:SWEEP:RANG BEST
+:SOUR:SWEEP:SPAC LIN
+:SOUR:DEL 0.001
+:TRIG:COUN 3
+:FORM:ELEM VOLT, CURR, RES"""
 
 APPLY_VOLTAGE = """
 *RST
@@ -167,14 +185,16 @@ if __name__ == '__main__':
 #        sc =  Serial_Com()
         nplc = 0.02
         v_start = 0.5
-        v_stop = 1.5
+        v_stop = 2
         n_pts = 3
         v_step = float( v_stop - v_start )/(n_pts-1)
 		
         print('programming SOURCE!')
-        for cmd in str2lines( EXAMPLE.format( **locals() ) ):
+        for cmd in str2lines( TRY_SWEEP.format( **locals() ) ):
             print(cmd)
             source_dev.send_cmd(str.encode(cmd))
+        read_resp = source_dev.ask_cmd(":READ?")
+        print("Response: " + str(read_resp))
         #source_dev.send_cmd(str.encode(":OUTP ON"))
         #source_dev.send_cmd(str.encode(":READ?"))
         #time.sleep(5)
