@@ -13,20 +13,42 @@ import time
 #import excelWrite as xls
 import matplotlib.pyplot as plt
 
-X = [590,540,740,130,810,300,320,230,470,620,770,250]
-Y = [32,36,39,52,61,72,77,75,68,57,48,48]
+def plot_data(xplot, yplot, title, xlabel, ylabel):
+    #X = [590,540,740,130,810,300,320,230,470,620,770,250]
+    #Y = [32,36,39,52,61,72,77,75,68,57,48,48]
 
-plt.scatter(X,Y)
+    plt.scatter(xplot,yplot)
 
-plt.xlim(0,1000)
-plt.ylim(0,100)
+    plt.xlim(0,1000)
+    plt.ylim(0,100)
 
-plt.title('Relationship Between Temperature and Iced Coffee Sales')
-plt.xlabel('Cups of Iced Coffee Sold')
-plt.ylabel('Temperature in Fahrenheit')
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
 
-plt.show()
+    plt.show()
+    
+EXAMPLE = """
+*RST
+:SENS:FUNC 'RES'
+:SENS:RES:NPLC 1
+:SENS:RES:MODE MAN
+:SOUR:FUNC CURR
+:SOUR:CURR 0.01
+:SOUR:CLE:AUTO ON
+:SENS:VOLT:PROT 10
+:TRIG:COUN 1
+:FORM:ELEM RES
+:READ?"""
 
+APPLY_VOLTAGE = """
+*RST
+:SOUR:FUNC VOLT
+:SOUR:VOLT:MODE FIXED
+:SOUR:VOLT:RANG 20
+:SOUR:VOLT:LEV 10
+:SOUR:CLE:AUTO ON
+:OUTP ON"""
 
 SOURCE_SETUP = """
 *RST
@@ -62,7 +84,8 @@ SOURCE_SETUP = """
 
 :SOUR:SWEEP:RANG BEST
 :SOUR:SWEEP:SPAC LIN
-:SOUR:DEL 0.001"""
+:SOUR:DEL 0.001
+:SOUR:CLE:AUTO ON"""
 
 METER_SETUP = """
 *RST
@@ -149,9 +172,13 @@ if __name__ == '__main__':
         v_step = float( v_stop - v_start )/(n_pts-1)
 		
         print('programming SOURCE!')
-        for cmd in str2lines( SOURCE_SETUP.format( **locals() ) ):
+        for cmd in str2lines( EXAMPLE.format( **locals() ) ):
             print(cmd)
             source_dev.send_cmd(str.encode(cmd))
+        #source_dev.send_cmd(str.encode(":OUTP ON"))
+        #source_dev.send_cmd(str.encode(":READ?"))
+        #time.sleep(5)
+        #source_dev.send_cmd(str.encode(":OUTP OFF"))
 # 		
 # 		print 'programming METER!'
 # 		for cmd in str2lines( METER_SETUP.format( **locals() ) ):
@@ -159,8 +186,8 @@ if __name__ == '__main__':
 # 			meter_dev.send_cmd( cmd )		
 # 			
 # 		print; print
-# 		source_dev.set_output('ON')
-# 		source_dev.set_panel('OFF')
+        #source_dev.set_output('ON')
+        #source_dev.set_panel('OFF')
 # 		meter_dev.set_output('ON')
 # 		meter_dev.set_panel('OFF')
 
@@ -188,12 +215,15 @@ if __name__ == '__main__':
 # 				# for v in Vm:	# repeat triggered sweep 10x real fast
 
 # 				# meter_dev.set_fixed_V(v)
-# 				source_dev.flushInput()
-# 				source_dev.write(':TRIG:COUN {n_pts}\rREAD?\r'.format( **locals() )) # can this be pipelined??
+        #source_dev.flushInput()
+        #source_dev.send_cmd(str.encode(":TRIG:COUN {n_pts}".format( **locals() )))
+        #time.sleep(3)
+        #source_dev.send_cmd(str.encode(":READ?")) # can this be pipelined??
 # 				meter_dev.flushInput()
 # 				meter_dev.write(':TRIG:COUN {n_pts}\rREAD?\r'.format( **locals() )) # reset trigger count and go
 
-# 				s = np.fromstring( source_dev.readline(), sep=',' )
+        #s = np.fromstring( source_dev.readline(), sep=',' )
+        #print(str(s))
 # 				s[s == 9.91e37] = nan
 # 				Is += [s]
 # 				m = np.fromstring( meter_dev.readline(), sep=',' )
@@ -210,8 +240,8 @@ if __name__ == '__main__':
 # 		# print ('time for a single pixel',secs, 'seconds') 
 # 		# print ('total time = ',total)
 # 		
-# 		source_dev.set_output('OFF')
-# 		source_dev.set_panel('ON')
+        #source_dev.set_output('OFF')
+        #source_dev.set_panel('ON')
 # 		meter_dev.set_output('OFF')
 # 		meter_dev.set_panel('ON')
 # 		

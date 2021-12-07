@@ -63,7 +63,7 @@ class RS232_Keithley24xx(serial.Serial):
         while True:	
             emsg = self.ask_cmd(":STAT:QUE?")
             print(emsg[0])
-            if emsg[0] == 48:
+            if (emsg[0] == 48) or (emsg[0] == 43) or (emsg[0] == 45):
                 break
             errs += [emsg]
         return errs
