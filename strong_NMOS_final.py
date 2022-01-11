@@ -9,24 +9,56 @@ import numpy as np
 # import xlsxwriter
 import serial
 import time
+from time import strftime
 #from data_logger import DataLogging
 #import excelWrite as xls
 import matplotlib.pyplot as plt
+
+def set_datetime():
+    global full_datetime
+    full_datetime = strftime("%m/%d/%y at %I:%M:%S%p")
+    print(full_datetime)
+    
+def create_fullstring():
+    global dut
+    global trans_active
+    global full_datetime
+    global full_string
+    
+    full_string = dut + ' - ' + trans_active + ' - ' + full_datetime
+    full_string = full_string.replace('/', "_")
+    full_string = full_string.replace(':', "-")
+    print(full_string)
+    
 
 def plot_data(xplot, yplot, title, xlabel, ylabel):
     #X = [590,540,740,130,810,300,320,230,470,620,770,250]
     #Y = [32,36,39,52,61,72,77,75,68,57,48,48]
 
+    global dut
+    global trans_active
+    global full_datetime
+    global full_string
+
     plt.scatter(xplot,yplot)
 
     plt.xlim(0,10)
-    plt.ylim(0,25000)
+    plt.ylim(0,50000)
 
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
+
+    final_string = 'graphs/' + full_string + '.pdf'
+    print(final_string)
+    plt.savefig(final_string)
     plt.show()
+    
+dut = "Atmega328P-AU - All Fs"
+trans_active = "Not Active"
+full_datetime = ""
+full_string = ""
     
 SIMPLE_RESISTANCE = """
 *RST
@@ -201,21 +233,37 @@ if __name__ == '__main__':
 #        sc =  Serial_Com()
         nplc = 0.02
         v_start = 0.5
-        v_stop = 2
+        v_stop = 5
         n_pts = 100
         v_step = float( v_stop - v_start )/(n_pts-1)
+        set_datetime()
+        create_fullstring()
 		
         print('programming SOURCE!')
         for cmd in str2lines( TRY_SWEEP.format( **locals() ) ):
             print(cmd)
             source_dev.send_cmd(str.encode(cmd))
-        read_resp = source_dev.ask_cmd(":READ?")
-        print("Response: " + str(read_resp))
-        s = np.fromstring( read_resp, sep=',' )
-        print(str(s))
-        s = splitArray(3, s)
-        print(s)
-        plot_data(s[0], s[2], "Voltage vs. Current", "Volts", "Current")
+        try:
+            read_resp = source_dev.ask_cmd(":READ?")
+            print("Response: " + str(read_resp))
+            s = np.fromstring( read_resp, sep=',' )
+            print(str(s))
+            s = splitArray(3, s)
+            print(s)
+            plot_data(s[0], s[2], "Voltage vs. Current", "Volts", "Current")
+            f = open("log.txt", "a")
+            write_string = "\n" + full_string + "\n" + str(s) + "\n"
+            #print(write_string)
+            f.write(write_string)
+            f.close()
+        except:
+                print("Failed to get data or something")
+                
+        
+        
+        
+        source_dev.clear_instrument()
+        
         #source_dev.send_cmd(str.encode(":OUTP ON"))
         #source_dev.send_cmd(str.encode(":READ?"))
         #time.sleep(5)
