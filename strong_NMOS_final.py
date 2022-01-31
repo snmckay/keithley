@@ -233,7 +233,7 @@ if __name__ == '__main__':
 #        sc =  Serial_Com()
         nplc = 0.02
         v_start = 0.5
-        v_stop = 5
+        v_stop = 3
         n_pts = 100
         v_step = float( v_stop - v_start )/(n_pts-1)
         set_datetime()
