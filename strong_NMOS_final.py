@@ -221,44 +221,20 @@ def splitArray(numFields, samples):
             i = 0
     return arrays
     
+def print_menu():
+    print("Keithley 6430 Comms:")
+    print("\t 1.) Initialize Keithley 6430")
+    print("\t 2.) Quit")
+    
+def get_input():
+    global selected
+    selected = input("Please type the number for your chosen option: ")
+    while not selected.isnumeric():
+        selected = input("Please type the number for your chosen option: ")
+    return int(selected)
 
-def str2lines(str):
-	return [ l.strip() for l in str.split('\n') if l ]
-
-# def initialize ():
-# 	
-# 	blue_sweep = L.load_default()
-# 	assert len(blue_sweep) == 41, "length is not 41"
-# 	blue_sweep[1] = 1		#sets spi mode
-# 	blue_sweep[24] = 1		#load signal
-# 	blue_sweep[25] = 1		#monitor enable signal
-# 	blue_sweep[26] = 1		#precharge signal
-# 	blue_sweep[27] = 0		#select strong signal
-# 	blue_sweep[34] = 1		#monitor nmos of pixel
-# 	blue_sweep[7]  = 0 	#monitor pmos
-# 	blue_sweep[27]	=	1 #sels signal
-
-# 	blue_sweep_payload =  u.array_of_regs_to_payload(blue_sweep)
-# 	assert len(blue_sweep_payload) == 6, "length is not 6"
-# 	return blue_sweep_payload
-
-
-if __name__ == '__main__':
-    name = sys.argv[1:]
-    comment = ''
-    # assert len(name),"you forgot to give it the damn name"
-    # #timelog = DL.get_time()
-    # if len(name) > 1:
-    #     comment = '-'+name[1]
-    #name = name[0]
-    # runName = "tcsa1-"
-    # waferNum = "w2-"
-    # logname = runName+waferNum+name+ "-SNMOS-Final"
-    #blue_sweep_payload = initialize()
-    time.sleep(2)	
-    smu = RS232_Keithley24xx.discover_connected( baudrate=9600 )
-    print(smu)
-    with smu[0] as source_dev:
+def keithley_run_hardcoded(dev):
+    with dev[0] as source_dev:
 #        sc =  Serial_Com()
         nplc = 0.02
         v_start = 0.5
@@ -296,103 +272,56 @@ if __name__ == '__main__':
         
         
         source_dev.clear_instrument()
+
+def keithley_init_and_menu():
+    choice = -1
+    smu = RS232_Keithley24xx.discover_connected( baudrate=9600 )
+    print(smu)
+    print(len(smu))
+    
+    while True:
+        if len(smu) > 0:
+            print("Keithley 6430 Options:")
+            print("\t 1.) Run the test. (More added later)")
+            print("\t 2.) Clear settings Keithley 6430")
+            print("\t 3.) Exit")
+            if choice == 1:
+                keithley_run_hardcoded(smu)
+            elif choice == 2:
+                smu[0].clear_instrument()
+            elif choice == 3:
+                sys.exit()
+            else:
+                print("Invalid input. Try again.")
+        else:
+            print("No Keithley 6430 Found:")
+            print("\t 1.) Search for Keithley 6430")
+            print("\t 2.) Exit")
+            choice = get_input()
+            if choice == 1:
+                smu = RS232_Keithley24xx.discover_connected( baudrate=9600 )
+            elif choice == 2:
+                sys.exit()
+            else:
+                print("Invalid input. Try again.")
         
-        #source_dev.send_cmd(str.encode(":OUTP ON"))
-        #source_dev.send_cmd(str.encode(":READ?"))
-        #time.sleep(5)
-        #source_dev.send_cmd(str.encode(":OUTP OFF"))
-# 		
-# 		print 'programming METER!'
-# 		for cmd in str2lines( METER_SETUP.format( **locals() ) ):
-# #			print cmd
-# 			meter_dev.send_cmd( cmd )		
-# 			
-# 		print; print
-        #source_dev.set_output('ON')
-        #source_dev.set_panel('OFF')
-# 		meter_dev.set_output('ON')
-# 		meter_dev.set_panel('OFF')
+        
 
-# 		Ta = time.time()
-# 		
-# 		Is = []
-# 		Im = []
-# 		Imf =[]
-# 		Vm = linspace(10,10,1)
-# 		x_range = 256
-# 		y_range = 256
-# 		xy_range =  x_range*y_range;
-# 		
-# 		strz = []
-# 		meter_dev.set_fixed_V(10)
-# 		for y in range(y_range):
-# 			print("checkpoint...",y)
-# 			for x in range (x_range):
-# 				z = str(x)+","+str(y)
-# 				strz.append(z)
-# 				blue_sweep_payload[1] = x
-# 				blue_sweep_payload[2] = y
-# 				blue_sweep_pack = u.make_packs_payload(ins,direction,version,"00","00",blue_sweep_payload)
-# 				sc.send_serial_data(blue_sweep_pack)
-# 				# for v in Vm:	# repeat triggered sweep 10x real fast
+def str2lines(str):
+	return [ l.strip() for l in str.split('\n') if l ]
 
-# 				# meter_dev.set_fixed_V(v)
-        #source_dev.flushInput()
-        #source_dev.send_cmd(str.encode(":TRIG:COUN {n_pts}".format( **locals() )))
-        #time.sleep(3)
-        #source_dev.send_cmd(str.encode(":READ?")) # can this be pipelined??
-# 				meter_dev.flushInput()
-# 				meter_dev.write(':TRIG:COUN {n_pts}\rREAD?\r'.format( **locals() )) # reset trigger count and go
 
-        #s = np.fromstring( source_dev.readline(), sep=',' )
-        #print(str(s))
-# 				s[s == 9.91e37] = nan
-# 				Is += [s]
-# 				m = np.fromstring( meter_dev.readline(), sep=',' )
-# 				m[m == 9.91e37] = nan
-# 				Im += [m]
-# 			Imf += [Im[y*y_range-1]]
-# 				
-# 			
-# 			
-# 		Tb = time.time()
-# 		
-# 		secs = (Tb - Ta)/(len(Vm)*n_pts)
-# 		total = (Tb - Ta)
-# 		# print ('time for a single pixel',secs, 'seconds') 
-# 		# print ('total time = ',total)
-# 		
-        #source_dev.set_output('OFF')
-        #source_dev.set_panel('ON')
-# 		meter_dev.set_output('OFF')
-# 		meter_dev.set_panel('ON')
-# 		
-# #	Vs = repeat( [linspace(v_start, v_stop, n_pts)], len(Vm), 0 )
-# 	Vs = linspace(v_start, v_stop, n_pts)
-# 	
-# 	Is = array(Is)
-# 	Im = array(Im)
-# 	path = "logs/"
-# 	fullName = path+logname+'-'+timelog+comment
-# 	np.save(fullName,Im)
-# 	# xls.xlsWrite(fullName)
-# 	# xls.colWrite(linspace(v_start,v_stop,n_pts),'voltage',0)
-# 	# col = 1  
-# 	# for i in range (xy_range):
-# 	# 	xls.colWrite(Im[i],strz[i],col)
-# 	# 	col+=1
-# 	# xls.close
-# 	Tc = time.time()
-# 	allTime = (Tc-Ta)
-# 	# print ('totaltime2',allTime)
-# 	# np.save(logname2+timelog,Is)
-# 	# print Is
-# 	# print ("---------------------------------------------")
-# 	Imf = Imf[1:]
-# 	# print sum(isnan(Is))/float(len(Is)), '% NaNs'
-# 	figure()
-# 	for m in Imf:
-# 		# plot(Vs, s, 'g' )
-# 		plot(Vs, m, 'b' )
-# 	legend()
-# 	show()	
+if __name__ == '__main__':
+    name = sys.argv[1:]
+    comment = ''
+    
+    while True:
+        print_menu()
+        choice = get_input()
+        if choice == 1:
+            keithley_init_and_menu()
+        elif choice == 2:
+            sys.exit()
+        else:
+            print("Invalid input. Try again.")
+    sys.exit()
