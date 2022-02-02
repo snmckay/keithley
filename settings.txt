@@ -4,5 +4,5 @@ All Cs
 Rectangular Cut
 3
 Not Active
-Voltage/Volts
-Resistance/Ohms
+Voltage_Volts
+Resistance_Ohms

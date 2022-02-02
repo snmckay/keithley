@@ -33,6 +33,7 @@ def create_fullstring():
     full_string = dut + ' - ' + data_pop + ' - ' + cut_type + ' - Bit ' + str(bit_num) + ' - ' + trans_active + ' - ' + sourcing + " vs. " + sensing + ' - ' + full_datetime
     full_string = full_string.replace('/', "_")
     full_string = full_string.replace(':', "-")
+    full_string = full_string.replace('.', '')
     print(full_string)
     
 
@@ -47,18 +48,22 @@ def plot_data(xplot, yplot, title, xlabel, ylabel):
 
     plt.scatter(xplot,yplot)
 
-    plt.xlim(0,11)
+    plt.xlim(0,3.5)
     plt.ylim(0,100000)
 
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
-
+    print("Made Plot")
     final_string = 'graphs/' + full_string + '.pdf'
     print(final_string)
+    print("Saving")
     plt.savefig(final_string)
+    print("Saved")
     plt.show()
+    print("Shown")
+    return
 
 meter = "Keithley 6430"    
 dut = "Atmega328P-AU"
@@ -66,8 +71,8 @@ data_pop = "All Cs"
 cut_type = "Rectangle Cut"
 trans_active = "Not Active"
 bit_num = 0
-sourcing = "Volts"        #This DOES NOT change the keithley settings. Just for document naming
-sensing = "Resistance"    #This DOES NOT change the keithley settings. Just for document naming
+sourcing = "Voltage_Volts"        #This DOES NOT change the keithley settings. Just for document naming
+sensing = "Resistance_Ohms"    #This DOES NOT change the keithley settings. Just for document naming
 full_datetime = ""
 full_string = ""
     
@@ -277,12 +282,13 @@ def get_input():
 def keithley_run_hardcoded(dev):
     global sourcing
     global sensing
+    global full_string
     with dev[0] as source_dev:
 #        sc =  Serial_Com()
         nplc = 0.02
         v_start = 0.5
-        v_stop = 2
-        n_pts = 100
+        v_stop = 3.5
+        n_pts = 40
         v_step = float( v_stop - v_start )/(n_pts-1)
         set_datetime()
         create_fullstring()
@@ -302,11 +308,13 @@ def keithley_run_hardcoded(dev):
             s = splitArray(2, s)
             print(s)
             print("Trying to plot")
-            source_split = sourcing.split('/')
-            sense_split = sensing.split('/')
+            source_split = sourcing.split('_')
+            sense_split = sensing.split('_')
             title = source_split[0] + " vs. " + sense_split[0]
             plot_data(s[0], s[1], title, source_split[1], sense_split[1])
+            print("Trying to open")
             f = open("log.txt", "a")
+            print("opened")
             write_string = "\n" + full_string + "\n" + str(s) + "\n"
             #print(write_string)
             f.write(write_string)
@@ -355,8 +363,8 @@ def changeStrings():
         elif choice == 8:
             sensing = input("What is the Keithley sensing? ")
         elif choice == 9:
-            source_split = sourcing.split('/')
-            sense_split = sensing.split('/')
+            source_split = sourcing.split('_')
+            sense_split = sensing.split('_')
             title = source_split[0] + " vs. " + sense_split[0]
             print(title)
             updateSettingsFile()
@@ -377,6 +385,7 @@ def keithley_init_and_menu():
             print("\t 2.) Clear settings Keithley 6430")
             print("\t 3.) Change Strings")
             print("\t 4.) Exit")
+            choice = get_input()
             if choice == 1:
                 keithley_run_hardcoded(smu)
             elif choice == 2:
