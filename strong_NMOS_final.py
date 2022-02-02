@@ -21,11 +21,16 @@ def set_datetime():
     
 def create_fullstring():
     global dut
+    global data_pop
+    global cut_type
     global trans_active
+    global bit_num
+    global sourcing
+    global sensing
     global full_datetime
     global full_string
     
-    full_string = dut + ' - ' + trans_active + ' - ' + full_datetime
+    full_string = dut + ' - ' + data_pop + ' - ' + cut_type + ' - Bit ' + str(bit_num) + ' - ' + trans_active + ' - ' + sourcing + " vs. " + sensing + ' - ' + full_datetime
     full_string = full_string.replace('/', "_")
     full_string = full_string.replace(':', "-")
     print(full_string)
@@ -54,9 +59,15 @@ def plot_data(xplot, yplot, title, xlabel, ylabel):
     print(final_string)
     plt.savefig(final_string)
     plt.show()
-    
-dut = "Atmega328P-AU - All Cs - Rectangle Cut"
+
+meter = "Keithley 6430"    
+dut = "Atmega328P-AU"
+data_pop = "All Cs"
+cut_type = "Rectangle Cut"
 trans_active = "Not Active"
+bit_num = 0
+sourcing = "Volts"        #This DOES NOT change the keithley settings. Just for document naming
+sensing = "Resistance"    #This DOES NOT change the keithley settings. Just for document naming
 full_datetime = ""
 full_string = ""
     
@@ -196,16 +207,45 @@ METER_SETUP = """
 :SOUR:DEL 0.00"""
 		
 
-ins = 'b'
-direction = '1'
-version = '2'
+def readFromSettingsFile():
+    global meter
+    global dut
+    global data_pop
+    global cut_type
+    global trans_active
+    global bit_num
+    global sourcing
+    global sensing
+    
+    with open('settings.txt', 'r') as file:
+        meter = (file.readline()).strip('\n')
+        dut = (file.readline()).strip('\n')
+        data_pop = (file.readline()).strip('\n')
+        cut_type = (file.readline()).strip('\n')
+        bit_num = int((file.readline()).strip('\n'))
+        trans_active = (file.readline()).strip('\n')
+        sourcing = (file.readline()).strip('\n')
+        sensing = (file.readline()).strip('\n')
 
-
-
-#u =  U_Functions()
-#L = Loading()
-#DL = DataLogging()
-
+def updateSettingsFile():
+    global meter
+    global dut
+    global data_pop
+    global cut_type
+    global trans_active
+    global bit_num
+    global sourcing
+    global sensing
+    with open('settings.txt', 'w') as file:
+        file.write(meter + '\n')
+        file.write(dut + '\n')
+        file.write(data_pop + '\n')
+        file.write(cut_type + '\n')
+        file.write(str(bit_num) + '\n')
+        file.write(trans_active + '\n')
+        file.write(sourcing + '\n')
+        file.write(sensing + '\n')
+        
 def splitArray(numFields, samples):
     arrays = []
     i = 0
@@ -224,7 +264,8 @@ def splitArray(numFields, samples):
 def print_menu():
     print("Keithley 6430 Comms:")
     print("\t 1.) Initialize Keithley 6430")
-    print("\t 2.) Quit")
+    print("\t 2.) Change Strings")
+    print("\t 3.) Exit")
     
 def get_input():
     global selected
@@ -234,6 +275,8 @@ def get_input():
     return int(selected)
 
 def keithley_run_hardcoded(dev):
+    global sourcing
+    global sensing
     with dev[0] as source_dev:
 #        sc =  Serial_Com()
         nplc = 0.02
@@ -259,7 +302,10 @@ def keithley_run_hardcoded(dev):
             s = splitArray(2, s)
             print(s)
             print("Trying to plot")
-            plot_data(s[0], s[1], "Voltage vs. Resistance", "Volts", "Ohms")
+            source_split = sourcing.split('/')
+            sense_split = sensing.split('/')
+            title = source_split[0] + " vs. " + sense_split[0]
+            plot_data(s[0], s[1], title, source_split[1], sense_split[1])
             f = open("log.txt", "a")
             write_string = "\n" + full_string + "\n" + str(s) + "\n"
             #print(write_string)
@@ -268,10 +314,55 @@ def keithley_run_hardcoded(dev):
         except:
                 print("Failed to get data or something")
                 
-        
-        
-        
         source_dev.clear_instrument()
+
+def changeStrings():
+    global meter
+    global dut
+    global data_pop
+    global cut_type
+    global trans_active
+    global bit_num
+    global sourcing
+    global sensing
+    
+    while True:
+        print("Current strings to modify: ")
+        print("1.) Meter: "             + meter)
+        print("2.) DUT: "               + dut)
+        print("3.) Populated Data: "    + data_pop)
+        print("4.) Cut Type: "          + cut_type)
+        print("5.) Bit Number: "        + str(bit_num))
+        print("6.) Transistor Active: " + trans_active)
+        print("7.) Sourcing: "          + sourcing)
+        print("8.) Sensing: "           + sensing)
+        print("9.) Exit (Modifications complete)")
+        choice = get_input()
+        if choice == 1:
+            meter = input("Enter Meter Model: ")
+        elif choice == 2:
+            dut = input("Enter chip model: ")
+        elif choice == 3:
+            data_pop = input("Enter data populated on the chip: ")
+        elif choice == 4:
+            cut_type = input("Enter the cut type: ")
+        elif choice == 5:
+            bit_num = int(input("Enter bit line number being probed currently: "))
+        elif choice == 6:
+            trans_active = input("Transistor is (Active/Inactive)? ")
+        elif choice == 7:
+            sourcing = input("What is the Keithley sourcing? ")
+        elif choice == 8:
+            sensing = input("What is the Keithley sensing? ")
+        elif choice == 9:
+            source_split = sourcing.split('/')
+            sense_split = sensing.split('/')
+            title = source_split[0] + " vs. " + sense_split[0]
+            print(title)
+            updateSettingsFile()
+            return
+        else:
+            print("Invalid selection. Try again.")
 
 def keithley_init_and_menu():
     choice = -1
@@ -282,25 +373,31 @@ def keithley_init_and_menu():
     while True:
         if len(smu) > 0:
             print("Keithley 6430 Options:")
-            print("\t 1.) Run the test. (More added later)")
+            print("\t 1.) Run the hard-coded test. (More added later)")
             print("\t 2.) Clear settings Keithley 6430")
-            print("\t 3.) Exit")
+            print("\t 3.) Change Strings")
+            print("\t 4.) Exit")
             if choice == 1:
                 keithley_run_hardcoded(smu)
             elif choice == 2:
                 smu[0].clear_instrument()
             elif choice == 3:
+                changeStrings()
+            elif choice == 4:
                 sys.exit()
             else:
                 print("Invalid input. Try again.")
         else:
             print("No Keithley 6430 Found:")
             print("\t 1.) Search for Keithley 6430")
-            print("\t 2.) Exit")
+            print("\t 2.) Change Strings")
+            print("\t 3.) Exit")
             choice = get_input()
             if choice == 1:
                 smu = RS232_Keithley24xx.discover_connected( baudrate=9600 )
             elif choice == 2:
+                changeStrings()
+            elif choice == 3:
                 sys.exit()
             else:
                 print("Invalid input. Try again.")
@@ -314,13 +411,17 @@ def str2lines(str):
 if __name__ == '__main__':
     name = sys.argv[1:]
     comment = ''
-    
+    readFromSettingsFile()
     while True:
+        set_datetime()
+        create_fullstring()
         print_menu()
         choice = get_input()
         if choice == 1:
             keithley_init_and_menu()
         elif choice == 2:
+            changeStrings()
+        elif choice == 3:
             sys.exit()
         else:
             print("Invalid input. Try again.")
