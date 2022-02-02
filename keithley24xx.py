@@ -21,7 +21,7 @@ class RS232_Keithley24xx(serial.Serial):
     @classmethod
     def discover_connected(klass, startPort=1, endPort=40, **portsetup):
         portsettings = portsetup.copy()
-        portsettings['timeout'] = 0.5
+        portsettings['timeout'] = 2
         found = []
         for port in range(startPort, endPort+1):
             try:

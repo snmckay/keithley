@@ -42,8 +42,8 @@ def plot_data(xplot, yplot, title, xlabel, ylabel):
 
     plt.scatter(xplot,yplot)
 
-    plt.xlim(0,10)
-    plt.ylim(0,50000)
+    plt.xlim(0,11)
+    plt.ylim(0,100000)
 
     plt.title(title)
     plt.xlabel(xlabel)
@@ -55,7 +55,7 @@ def plot_data(xplot, yplot, title, xlabel, ylabel):
     plt.savefig(final_string)
     plt.show()
     
-dut = "Atmega328P-AU - All Fs"
+dut = "Atmega328P-AU - All Cs - Rectangle Cut"
 trans_active = "Not Active"
 full_datetime = ""
 full_string = ""
@@ -72,13 +72,25 @@ SIMPLE_RESISTANCE = """
 :TRIG:COUN 1
 :FORM:ELEM RES"""
 
-TRY_SWEEP = """
+TRY_SWEEP2 = """
+*RST
+:SOUR:FUNC VOLT
+:SOUR:VOLT:MODE FIXED
+:SOUR:VOLT:RANG 20
+:SOUR:VOLT:LEV 10
+:SENS:FUNC 'RES'
+:SOUR:CLE:AUTO ON
+:FORM:ELEM VOLT, RES
+"""
+
+TRY_SWEEP3 = """
 *RST
 :ARM:COUN 1
 :ARM:SOUR IMM
-:SENS:FUNC 'RES'
+:SENS:FUNC \"RES\"
 :SENS:RES:NPLC 1
 :SENS:RES:MODE MAN
+:SENS:CURR:PROT 0.0001
 :SOUR:FUNC VOLT
 :SOUR:VOLT:STAR {v_start}
 :SOUR:VOLT:STOP {v_stop}
@@ -90,6 +102,23 @@ TRY_SWEEP = """
 :SOUR:DEL 0.001
 :TRIG:COUN {n_pts}
 :FORM:ELEM VOLT, RES, CURR"""
+
+TRY_SWEEP = """
+*RST
+:ARM:COUN 1
+:ARM:SOUR IMM
+:SENS:FUNC \"RES\"
+:SOUR:FUNC VOLT
+:SOUR:VOLT:STAR {v_start}
+:SOUR:VOLT:STOP {v_stop}
+:SOUR:VOLT:STEP {v_step}
+:SOUR:VOLT:MODE SWE
+:SOUR:CLE:AUTO ON
+:SOUR:SWEEP:RANG BEST
+:SOUR:SWEEP:SPAC LIN
+:SOUR:DEL:AUTO ON
+:TRIG:COUN {n_pts}
+:FORM:ELEM VOLT, RES"""
 
 APPLY_VOLTAGE = """
 *RST
@@ -233,7 +262,7 @@ if __name__ == '__main__':
 #        sc =  Serial_Com()
         nplc = 0.02
         v_start = 0.5
-        v_stop = 3
+        v_stop = 2
         n_pts = 100
         v_step = float( v_stop - v_start )/(n_pts-1)
         set_datetime()
@@ -244,13 +273,17 @@ if __name__ == '__main__':
             print(cmd)
             source_dev.send_cmd(str.encode(cmd))
         try:
+            print("Reading Now")
+            time.sleep(1)
             read_resp = source_dev.ask_cmd(":READ?")
             print("Response: " + str(read_resp))
             s = np.fromstring( read_resp, sep=',' )
             print(str(s))
-            s = splitArray(3, s)
+            print("Splitting Array")
+            s = splitArray(2, s)
             print(s)
-            plot_data(s[0], s[2], "Voltage vs. Current", "Volts", "Current")
+            print("Trying to plot")
+            plot_data(s[0], s[1], "Voltage vs. Resistance", "Volts", "Ohms")
             f = open("log.txt", "a")
             write_string = "\n" + full_string + "\n" + str(s) + "\n"
             #print(write_string)
