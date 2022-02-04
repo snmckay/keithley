@@ -49,7 +49,7 @@ def plot_data(xplot, yplot, title, xlabel, ylabel):
     plt.scatter(xplot,yplot)
 
     plt.xlim(0,3.5)
-    plt.ylim(0,100000)
+    plt.ylim(0,550000000)
 
     plt.title(title)
     plt.xlabel(xlabel)
@@ -287,7 +287,7 @@ def keithley_run_hardcoded(dev):
 #        sc =  Serial_Com()
         nplc = 0.02
         v_start = 0.5
-        v_stop = 3.5
+        v_stop = 3
         n_pts = 40
         v_step = float( v_stop - v_start )/(n_pts-1)
         set_datetime()
