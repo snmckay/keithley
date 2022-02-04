@@ -1,4 +1,5 @@
 from keithley24xx import RS232_Keithley24xx
+from bitData import bitData
 from pylab import *
 from binascii import hexlify
 #from serial_com import Serial_Com
@@ -36,6 +37,71 @@ def create_fullstring():
     full_string = full_string.replace('.', '')
     print(full_string)
     
+def findRange(data):
+    lowest = float(data[0])
+    highest = float(data[0])
+    calc_range = []
+    for num in data:
+        num = float(num)
+        if lowest > num:
+            lowest = num
+        if highest < num:
+            highest = num
+    calc_range.append(float(lowest))
+    calc_range.append(float(highest))
+    return calc_range
+
+def plot_bitData(bitNum):
+    global bits
+    global dut
+    global trans_active
+    global full_datetime
+    global full_string
+    array_location = locateBit(bitNum)
+    curr_data = 0
+    xRange = [0, 0]
+    yRange = [0, 0]
+    
+    #print("Data for bit " + str(bitNum) + ": " + str(bits[array_location].x_data) + "/" + str(bits[array_location].y_data))
+    
+    for xData in bits[array_location].getXData():
+        yData = (bits[array_location].getYData())[curr_data]
+        curr_data = curr_data + 1
+        #print(str(len(xData)), str(len(yData)))
+        if ((len(xData) > 5) and (len(xData) == len(yData))):
+            #print("Bit/Array " + str(bitNum) + "/" + str(curr_data) + "\n")
+            #print(str(xData), str(yData))
+            plt.scatter(xData, yData)
+            
+            tempXRange = findRange(xData)
+            tempYRange = findRange(yData)
+            if (float(tempXRange[1]) > 0):
+                if float(xRange[1]) < float(tempXRange[1]):
+                    xRange[1] = float(tempXRange[1])
+            if (float(tempYRange[1]) > 0):
+                if float(yRange[1]) < float(tempYRange[1]):
+                    yRange[1] = float(tempYRange[1])
+            if (float(tempYRange[0]) > 0):
+                if float(yRange[0]) > float(tempYRange[0]):
+                    yRange[0] = float(tempYRange[0])
+    #print("Limits: " + str(xRange) + "/" + str(yRange))
+    plt.xlim(int(xRange[0]), int(xRange[1]))
+    plt.ylim(int(yRange[0]), int(yRange[1]))
+
+    plt.title("Bit " + str(bitNum) + " Data Plot")
+    plt.xlabel("Voltage")
+    plt.ylabel("Resistance")
+
+    print("Made Plot")
+    final_string = 'graphs/Bit_' + str(bitNum) + '_compiled.pdf'
+    print(final_string)
+    print("Saving")
+    plt.savefig(final_string)
+    print("Saved")
+    plt.show()
+    print("Shown")
+    return
+    
 
 def plot_data(xplot, yplot, title, xlabel, ylabel):
     #X = [590,540,740,130,810,300,320,230,470,620,770,250]
@@ -48,8 +114,10 @@ def plot_data(xplot, yplot, title, xlabel, ylabel):
 
     plt.scatter(xplot,yplot)
 
-    plt.xlim(0,3.5)
-    plt.ylim(0,550000000)
+    xRange = findRange(xplot)
+    yRange = findRange(yplot)
+    plt.xlim(xRange[0], xRange[1])
+    plt.ylim(yRange[0], yRange[1])
 
     plt.title(title)
     plt.xlabel(xlabel)
@@ -210,7 +278,80 @@ METER_SETUP = """
 :SOUR:FUNC VOLT
 :SOUR:VOLT 5
 :SOUR:DEL 0.00"""
+
+bits = []
 		
+def bitExists(numBit):
+    global bits
+    for bit in bits:
+        if bit.bitNum == numBit:
+            return True
+    return False
+
+def locateBit(numBit):
+    global bits
+    bitNum = -1
+    for bit in bits:
+        bitNum = bitNum + 1
+        if bit.bitNum == numBit:
+            return bitNum
+    return -1
+
+def readFromLogFile():
+    global bits
+    with open('log.txt', 'r') as file:
+        myline = file.readline()
+        curr_bit = -1
+        while myline:
+            curr_array = []
+            #print("CURR_BIT: " + str(curr_bit))
+            myline = myline.strip('\n')
+            if len(myline) > 0:
+                #print(myline)
+                if myline[0] == '[':
+                    counter = 1
+                    end = -1
+                    while myline[counter] == '[':
+                        counter = counter + 1
+                    end = counter
+                    while myline[end] != ']':
+                        end = end + 1
+                    curr_array = myline[counter:end]
+                    curr_array = curr_array.split(',')
+                    curr_array = np.array(curr_array)
+                    curr_array = curr_array.astype(np.float_)
+                    #print(curr_array)
+                    curr_bit_loc = locateBit(curr_bit)
+                    (bits[curr_bit_loc]).appendXData(array(curr_array))
+                    
+                    while myline[end] != '[':
+                        end = end + 1
+                    counter = end + 1
+                    end = counter
+                    while myline[end] != ']':
+                        end = end + 1
+                    curr_array = myline[counter:end]
+                    curr_array = curr_array.split(',')
+                    curr_array = np.array(curr_array)
+                    curr_array = curr_array.astype(np.float_)
+                    #print(str(curr_array) + "\n")
+                    
+                    #print("Curr Bit Location: " + str(curr_bit_loc))
+                    #print(str(curr_array))
+                    (bits[curr_bit_loc]).appendYData(array(curr_array))
+                    #print("Bit " + str(curr_bit) + " lengths: " + str((bits[curr_bit_loc]).x_data) + "/" + str((bits[curr_bit_loc]).y_data))
+                else:
+                    pos = myline.find("Bit")
+                    #print(myline[pos+4])
+                    curr_bit = int(myline[pos+4])
+                    if not bitExists(curr_bit):
+                        #print("Added")
+                        bits.append(bitData(curr_bit))
+            myline = file.readline()
+    #print(str(bits))
+    for bit in bits:
+        print(str(len(bit.x_data)))
+        plot_bitData(bit.bitNum)
 
 def readFromSettingsFile():
     global meter
@@ -270,7 +411,8 @@ def print_menu():
     print("Keithley 6430 Comms:")
     print("\t 1.) Initialize Keithley 6430")
     print("\t 2.) Change Strings")
-    print("\t 3.) Exit")
+    print("\t 3.) Graph Log File")
+    print("\t 4.) Exit")
     
 def get_input():
     global selected
@@ -431,6 +573,8 @@ if __name__ == '__main__':
         elif choice == 2:
             changeStrings()
         elif choice == 3:
+            readFromLogFile()
+        elif choice == 4:
             sys.exit()
         else:
             print("Invalid input. Try again.")
