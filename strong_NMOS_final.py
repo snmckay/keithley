@@ -51,6 +51,85 @@ def findRange(data):
     calc_range.append(float(highest))
     return calc_range
 
+def plot_bitAverage(bitNum): #Doesn't work yet
+    global bits
+    global dut
+    global trans_active
+    global full_datetime
+    global full_string
+    array_location = locateBit(bitNum)
+    curr_data = 0
+    bitData = bits[array_location].getAverages()
+    xRange = findRange(bitData[0])
+    yRange = findRange(bitData[1])
+    
+    #print("Data for bit " + str(bitNum) + ": " + str(bits[array_location].x_data) + "/" + str(bits[array_location].y_data))
+    plt.scatter(bitData[0], bitData[1])
+        
+    #print("Limits: " + str(xRange) + "/" + str(yRange))
+    plt.xlim(int(xRange[0]), int(xRange[1]))
+    plt.ylim(int(yRange[0]), int(yRange[1]))
+
+    plt.title("Bit " + str(bitNum) + " Average Data Plot")
+    plt.xlabel("Voltage")
+    plt.ylabel("Resistance")
+
+    print("Made Plot")
+    final_string = 'graphs/Average_Bit_' + str(bitNum) + '.jpg'
+    print(final_string)
+    print("Saving")
+    plt.savefig(final_string)
+    print("Saved")
+    plt.show()
+    print("Shown")
+    return
+
+def plot_bitAverageCombined():
+    global bits
+    global dut
+    global trans_active
+    global full_datetime
+    global full_string
+    xRange = [0, 0]
+    yRange = [0, 0]
+    
+    for bit in bits:
+        tempData = bit.getAverages()
+        
+        plt.scatter(tempData[0], tempData[1], label = ("Bit " + str(bit.bitNum)))
+        
+        tempXRange = findRange(tempData[0])
+        tempYRange = findRange(tempData[1])
+        if (float(tempXRange[1]) > 0):
+            if float(xRange[1]) < float(tempXRange[1]):
+                xRange[1] = float(tempXRange[1])
+        if (float(tempYRange[1]) > 0):
+            if float(yRange[1]) < float(tempYRange[1]):
+                yRange[1] = float(tempYRange[1])
+        if (float(tempYRange[0]) > 0):
+            if float(yRange[0]) > float(tempYRange[0]):
+                yRange[0] = float(tempYRange[0])
+        
+        
+    #print("Limits: " + str(xRange) + "/" + str(yRange))
+    plt.xlim(int(xRange[0]), int(xRange[1]))
+    plt.ylim(int(yRange[0]), int(yRange[1]))
+    plt.legend()
+
+    plt.title("Average Bits Data Plot")
+    plt.xlabel("Voltage")
+    plt.ylabel("Resistance")
+
+    print("Made Plot")
+    final_string = 'graphs/Averages.jpg'
+    print(final_string)
+    print("Saving")
+    plt.savefig(final_string)
+    print("Saved")
+    plt.show()
+    print("Shown")
+    return
+
 def plot_bitData(bitNum):
     global bits
     global dut
@@ -93,7 +172,7 @@ def plot_bitData(bitNum):
     plt.ylabel("Resistance")
 
     print("Made Plot")
-    final_string = 'graphs/Bit_' + str(bitNum) + '_compiled.pdf'
+    final_string = 'graphs/Combined_Bit_' + str(bitNum) + '.jpg'
     print(final_string)
     print("Saving")
     plt.savefig(final_string)
@@ -124,7 +203,7 @@ def plot_data(xplot, yplot, title, xlabel, ylabel):
     plt.ylabel(ylabel)
 
     print("Made Plot")
-    final_string = 'graphs/' + full_string + '.pdf'
+    final_string = 'graphs/' + full_string + '.jpg'
     print(final_string)
     print("Saving")
     plt.savefig(final_string)
@@ -352,6 +431,8 @@ def readFromLogFile():
     for bit in bits:
         print(str(len(bit.x_data)))
         plot_bitData(bit.bitNum)
+        plot_bitAverage(bit.bitNum)
+    plot_bitAverageCombined()
 
 def readFromSettingsFile():
     global meter

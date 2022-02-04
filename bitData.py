@@ -1,6 +1,6 @@
 
-class bitData:
-        
+class bitData:  
+    
         def __init__(self, numIn):
             self.bitNum = numIn
             self.x_data = []
@@ -40,3 +40,31 @@ class bitData:
 
         def getBitNum(self):
             return self.bitNum
+        
+        def getAverages(self):
+            averagedX = []
+            averagedY = []
+            averaged = []
+            y_col_pos = 0
+            for collection in self.x_data:
+                y_pos = 0
+                if len(collection) > 5:
+                    for data in collection:
+                        if float(data) > 0:
+                            if data not in averagedX:
+                                print("Adding: " + str(data))
+                                averagedX.append(data)
+                                averagedY.append((self.y_data[y_col_pos])[y_pos])
+                            else:
+                                averagedY[averagedX.index(data)] = averagedY[averagedX.index(data)] + (self.y_data[y_col_pos])[y_pos]
+                        y_pos = y_pos + 1
+                y_col_pos = y_col_pos + 1
+            for dat in averagedY:
+                dat = dat/y_col_pos
+            print("Averaged lengths: " + str(len(averagedX)) + "/" + str(len(averagedY)))
+            averaged.append(averagedX)
+            averaged.append(averagedY)
+            return averaged
+            
+                    
+                    
