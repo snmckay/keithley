@@ -7,6 +7,8 @@ class bitData:
             self.x_label = ""
             self.y_data = []
             self.y_label = ""
+            self.y2_data = []
+            self.y2_label = ""
 
         def setXData(self, data_in):
             self.x_data = data_in
@@ -33,8 +35,19 @@ class bitData:
         def appendYData(self, data_in):
             self.y_data.append(data_in)
             return
-
+        
         def setYLabel(self, label_in):
+            self.y_label = label_in
+            return
+        
+        def setY2Data(self, data_in):
+            self.y_data = data_in
+            return
+        
+        def getY2Data(self):
+            return self.y_data
+        
+        def setY2Label(self, label_in):
             self.y_label = label_in
             return
 

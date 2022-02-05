@@ -268,9 +268,30 @@ TRY_SWEEP3 = """
 
 TRY_SWEEP = """
 *RST
+:SYST:AZER ON
 :ARM:COUN 1
 :ARM:SOUR IMM
 :SENS:FUNC \"RES\"
+:SENS:RES:RANG:AUTO ON
+:SOUR:FUNC VOLT
+:SOUR:VOLT:STAR {v_start}
+:SOUR:VOLT:STOP {v_stop}
+:SOUR:VOLT:STEP {v_step}
+:SOUR:VOLT:MODE SWE
+:SOUR:CLE:AUTO ON
+:SOUR:SWEEP:RANG BEST
+:SOUR:SWEEP:SPAC LIN
+:SOUR:DEL:AUTO ON
+:TRIG:COUN {n_pts}
+:FORM:ELEM VOLT, RES"""
+
+TRY_SWEEP_CURR = """
+*RST
+:SYST:AZER ON
+:ARM:COUN 1
+:ARM:SOUR IMM
+:SENS:FUNC \"CURR\"
+:SENS:CURR:RANG:AUTO ON
 :SOUR:FUNC VOLT
 :SOUR:VOLT:STAR {v_start}
 :SOUR:VOLT:STOP {v_stop}
@@ -502,6 +523,51 @@ def get_input():
         selected = input("Please type the number for your chosen option: ")
     return int(selected)
 
+def keithley_run_hardcoded_current(dev):
+    global sourcing
+    global sensing
+    global full_string
+    with dev[0] as source_dev:
+#        sc =  Serial_Com()
+        nplc = 0.02
+        v_start = 0.5
+        v_stop = 3
+        n_pts = 40
+        v_step = float( v_stop - v_start )/(n_pts-1)
+        set_datetime()
+        create_fullstring()
+		
+        print('programming SOURCE!')
+        for cmd in str2lines( TRY_SWEEP_CURR.format( **locals() ) ):
+            print(cmd)
+            source_dev.send_cmd(str.encode(cmd))
+        try:
+            print("Reading Now")
+            time.sleep(1)
+            read_resp = source_dev.ask_cmd(":READ?")
+            print("Response: " + str(read_resp))
+            s = np.fromstring( read_resp, sep=',' )
+            print(str(s))
+            print("Splitting Array")
+            s = splitArray(2, s)
+            print(s)
+            print("Trying to plot")
+            source_split = sourcing.split('_')
+            sense_split = sensing.split('_')
+            title = "Voltage vs.Current"
+            plot_data(s[0], s[1], title, "Volts", "Amps")
+            print("Trying to open")
+            f = open("log_curr.txt", "a")
+            print("opened")
+            write_string = "\n" + full_string + "\n" + str(s) + "\n"
+            #print(write_string)
+            f.write(write_string)
+            f.close()
+        except:
+                print("Failed to get data or something")
+                
+        source_dev.clear_instrument()
+
 def keithley_run_hardcoded(dev):
     global sourcing
     global sensing
@@ -608,6 +674,7 @@ def keithley_init_and_menu():
             print("\t 2.) Clear settings Keithley 6430")
             print("\t 3.) Change Strings")
             print("\t 4.) Exit")
+            print("\t 5.) Run the hard-coded test (CURRENT). (More added later)")
             choice = get_input()
             if choice == 1:
                 keithley_run_hardcoded(smu)
@@ -617,6 +684,8 @@ def keithley_init_and_menu():
                 changeStrings()
             elif choice == 4:
                 sys.exit()
+            elif choice == 5:
+                keithley_run_hardcoded_current(smu)
             else:
                 print("Invalid input. Try again.")
         else:
