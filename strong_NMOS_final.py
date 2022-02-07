@@ -51,7 +51,7 @@ def findRange(data):
     calc_range.append(float(highest))
     return calc_range
 
-def plot_bitAverage(bitNum): #Doesn't work yet
+def plot_bitAverage(bitNum, chop=False):
     global bits
     global dut
     global trans_active
@@ -75,7 +75,10 @@ def plot_bitAverage(bitNum): #Doesn't work yet
     plt.ylabel("Resistance")
 
     print("Made Plot")
-    final_string = 'graphs/Average_Bit_' + str(bitNum) + '.jpg'
+    if chop:
+        final_string = 'graphs/Average_Bit_' + str(bitNum) + '_chopped.jpg'
+    else:
+        final_string = 'graphs/Average_Bit_' + str(bitNum) + '.jpg'
     print(final_string)
     print("Saving")
     plt.savefig(final_string)
@@ -84,7 +87,7 @@ def plot_bitAverage(bitNum): #Doesn't work yet
     print("Shown")
     return
 
-def plot_bitAverageCombined():
+def plot_bitAverageCombined(chop=False):
     global bits
     global dut
     global trans_active
@@ -121,7 +124,10 @@ def plot_bitAverageCombined():
     plt.ylabel("Resistance")
 
     print("Made Plot")
-    final_string = 'graphs/Averages.jpg'
+    if chop:
+        final_string = 'graphs/Averages_chopped.jpg'
+    else:
+        final_string = 'graphs/Averages.jpg'
     print(final_string)
     print("Saving")
     plt.savefig(final_string)
@@ -130,7 +136,7 @@ def plot_bitAverageCombined():
     print("Shown")
     return
 
-def plot_bitData(bitNum):
+def plot_bitData(bitNum, chop=False):
     global bits
     global dut
     global trans_active
@@ -172,7 +178,10 @@ def plot_bitData(bitNum):
     plt.ylabel("Resistance")
 
     print("Made Plot")
-    final_string = 'graphs/Combined_Bit_' + str(bitNum) + '.jpg'
+    if chop:
+        final_string = 'graphs/Combined_Bit_' + str(bitNum) + '_chopped.jpg'
+    else:
+        final_string = 'graphs/Combined_Bit_' + str(bitNum) + '.jpg'
     print(final_string)
     print("Saving")
     plt.savefig(final_string)
@@ -182,7 +191,7 @@ def plot_bitData(bitNum):
     return
     
 
-def plot_data(xplot, yplot, title, xlabel, ylabel):
+def plot_data(dataIn, dataCount, title, xlabel, ylabel):
     #X = [590,540,740,130,810,300,320,230,470,620,770,250]
     #Y = [32,36,39,52,61,72,77,75,68,57,48,48]
 
@@ -190,27 +199,55 @@ def plot_data(xplot, yplot, title, xlabel, ylabel):
     global trans_active
     global full_datetime
     global full_string
-
-    plt.scatter(xplot,yplot)
-
-    xRange = findRange(xplot)
-    yRange = findRange(yplot)
-    plt.xlim(xRange[0], xRange[1])
-    plt.ylim(yRange[0], yRange[1])
-
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-
-    print("Made Plot")
-    final_string = 'graphs/' + full_string + '.jpg'
-    print(final_string)
-    print("Saving")
-    plt.savefig(final_string)
-    print("Saved")
-    plt.show()
-    print("Shown")
-    return
+    if dataCount == 2:
+        plt.scatter(dataIn[0],dataIn[1])
+    
+        xRange = findRange(dataIn[0])
+        yRange = findRange(dataIn[1])
+        plt.xlim(xRange[0], xRange[1])
+        plt.ylim(yRange[0], yRange[1])
+    
+        plt.title(title)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+    
+        print("Made Plot")
+        final_string = 'graphs/' + full_string + '.jpg'
+        print(final_string)
+        print("Saving")
+        plt.savefig(final_string)
+        print("Saved")
+        plt.show()
+        print("Shown")
+        return
+    elif dataCount == 3:
+        plt.scatter(dataIn[0],dataIn[1])
+        plt.scatter(dataIn[0],dataIn[2])
+    
+        xRange = findRange(dataIn[0])
+        yRange1 = findRange(dataIn[1])
+        yRange2 = findRange(dataIn[2])
+        
+        if yRange1[0] > yRange2[0]:
+            yRange1[0] = yRange2[0]
+        if yRange1[1] < yRange2[1]:
+            yRange1[1] = yRange2[1]
+        plt.xlim(xRange[0], xRange[1])
+        plt.ylim(yRange1[0], yRange1[1])
+    
+        plt.title(title)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+    
+        print("Made Plot")
+        final_string = 'graphs/' + full_string + 'CombinedResAndCurr.jpg'
+        print(final_string)
+        print("Saving")
+        plt.savefig(final_string)
+        print("Saved")
+        plt.show()
+        print("Shown")
+        return
 
 meter = "Keithley 6430"    
 dut = "Atmega328P-AU"
@@ -266,12 +303,26 @@ TRY_SWEEP3 = """
 :TRIG:COUN {n_pts}
 :FORM:ELEM VOLT, RES, CURR"""
 
-TRY_SWEEP = """
+TRY_SWEEP_RES = """
 *RST
 :SYST:AZER ON
 :ARM:COUN 1
 :ARM:SOUR IMM
 :SENS:FUNC \"RES\"
+:SENS:RES:RANG:AUTO ON
+:SOUR:FUNC CURR
+:SOUR:CURR 1E-6
+:SOUR:CLE:AUTO ON
+:SOUR:DEL:AUTO ON
+:TRIG:COUN {n_pts}
+:FORM:ELEM VOLT, CURR"""
+
+TRY_SWEEP_BOTH = """
+*RST
+:SYST:AZER ON
+:ARM:COUN 1
+:ARM:SOUR IMM
+:SENS:FUNC 'RES'
 :SENS:RES:RANG:AUTO ON
 :SOUR:FUNC VOLT
 :SOUR:VOLT:STAR {v_start}
@@ -279,7 +330,24 @@ TRY_SWEEP = """
 :SOUR:VOLT:STEP {v_step}
 :SOUR:VOLT:MODE SWE
 :SOUR:CLE:AUTO ON
-:SOUR:SWEEP:RANG BEST
+:SOUR:SWEEP:SPAC LIN
+:SOUR:DEL:AUTO ON
+:TRIG:COUN {n_pts}
+:FORM:ELEM VOLT, RES, CURR"""
+
+TRY_SWEEP = """
+*RST
+:SYST:AZER ON
+:ARM:COUN 1
+:ARM:SOUR IMM
+:SENS:FUNC 'RES'
+:SENS:RES:RANG:AUTO ON
+:SOUR:FUNC VOLT
+:SOUR:VOLT:STAR {v_start}
+:SOUR:VOLT:STOP {v_stop}
+:SOUR:VOLT:STEP {v_step}
+:SOUR:VOLT:MODE SWE
+:SOUR:CLE:AUTO ON
 :SOUR:SWEEP:SPAC LIN
 :SOUR:DEL:AUTO ON
 :TRIG:COUN {n_pts}
@@ -290,7 +358,7 @@ TRY_SWEEP_CURR = """
 :SYST:AZER ON
 :ARM:COUN 1
 :ARM:SOUR IMM
-:SENS:FUNC \"CURR\"
+:SENS:FUNC 'CURR:DC'
 :SENS:CURR:RANG:AUTO ON
 :SOUR:FUNC VOLT
 :SOUR:VOLT:STAR {v_start}
@@ -302,7 +370,7 @@ TRY_SWEEP_CURR = """
 :SOUR:SWEEP:SPAC LIN
 :SOUR:DEL:AUTO ON
 :TRIG:COUN {n_pts}
-:FORM:ELEM VOLT, RES"""
+:FORM:ELEM VOLT, CURR"""
 
 APPLY_VOLTAGE = """
 *RST
@@ -397,13 +465,14 @@ def locateBit(numBit):
             return bitNum
     return -1
 
-def readFromLogFile():
+def readFromLogFile(chop=False):
     global bits
     with open('log.txt', 'r') as file:
         myline = file.readline()
         curr_bit = -1
         while myline:
-            curr_array = []
+            curr_arrayX = []
+            curr_arrayY = []
             #print("CURR_BIT: " + str(curr_bit))
             myline = myline.strip('\n')
             if len(myline) > 0:
@@ -416,13 +485,13 @@ def readFromLogFile():
                     end = counter
                     while myline[end] != ']':
                         end = end + 1
-                    curr_array = myline[counter:end]
-                    curr_array = curr_array.split(',')
-                    curr_array = np.array(curr_array)
-                    curr_array = curr_array.astype(np.float_)
+                    curr_arrayX = myline[counter:end]
+                    curr_arrayX = curr_arrayX.split(',')
+                    curr_arrayX = np.array(curr_arrayX)
+                    curr_arrayX = curr_arrayX.astype(np.float_)
                     #print(curr_array)
                     curr_bit_loc = locateBit(curr_bit)
-                    (bits[curr_bit_loc]).appendXData(array(curr_array))
+                    
                     
                     while myline[end] != '[':
                         end = end + 1
@@ -430,15 +499,20 @@ def readFromLogFile():
                     end = counter
                     while myline[end] != ']':
                         end = end + 1
-                    curr_array = myline[counter:end]
-                    curr_array = curr_array.split(',')
-                    curr_array = np.array(curr_array)
-                    curr_array = curr_array.astype(np.float_)
+                    curr_arrayY = myline[counter:end]
+                    curr_arrayY = curr_arrayY.split(',')
+                    curr_arrayY = np.array(curr_arrayY)
+                    curr_arrayY = curr_arrayY.astype(np.float_)
                     #print(str(curr_array) + "\n")
                     
                     #print("Curr Bit Location: " + str(curr_bit_loc))
                     #print(str(curr_array))
-                    (bits[curr_bit_loc]).appendYData(array(curr_array))
+                    if(chop):
+                        low_pos = np.where(curr_arrayY > 0, curr_arrayY, np.inf).argmin()
+                        curr_arrayY = curr_arrayY[low_pos:end]
+                        curr_arrayX = curr_arrayX[low_pos:end]
+                    (bits[curr_bit_loc]).appendYData(array(curr_arrayY))
+                    (bits[curr_bit_loc]).appendXData(array(curr_arrayX))
                     #print("Bit " + str(curr_bit) + " lengths: " + str((bits[curr_bit_loc]).x_data) + "/" + str((bits[curr_bit_loc]).y_data))
                 else:
                     pos = myline.find("Bit")
@@ -451,9 +525,9 @@ def readFromLogFile():
     #print(str(bits))
     for bit in bits:
         print(str(len(bit.x_data)))
-        plot_bitData(bit.bitNum)
-        plot_bitAverage(bit.bitNum)
-    plot_bitAverageCombined()
+        plot_bitData(bit.bitNum, chop)
+        plot_bitAverage(bit.bitNum, chop)
+    plot_bitAverageCombined(chop)
 
 def readFromSettingsFile():
     global meter
@@ -514,7 +588,8 @@ def print_menu():
     print("\t 1.) Initialize Keithley 6430")
     print("\t 2.) Change Strings")
     print("\t 3.) Graph Log File")
-    print("\t 4.) Exit")
+    print("\t 4.) Graph Log File - Chopped")
+    print("\t 5.) Exit")
     
 def get_input():
     global selected
@@ -530,9 +605,9 @@ def keithley_run_hardcoded_current(dev):
     with dev[0] as source_dev:
 #        sc =  Serial_Com()
         nplc = 0.02
-        v_start = 0.5
-        v_stop = 3
-        n_pts = 40
+        v_start = .4
+        v_stop = 2
+        n_pts = 100
         v_step = float( v_stop - v_start )/(n_pts-1)
         set_datetime()
         create_fullstring()
@@ -554,8 +629,8 @@ def keithley_run_hardcoded_current(dev):
             print("Trying to plot")
             source_split = sourcing.split('_')
             sense_split = sensing.split('_')
-            title = "Voltage vs.Current"
-            plot_data(s[0], s[1], title, "Volts", "Amps")
+            title = "Bit " + str(bit_num) + " Voltage vs.Current"
+            plot_data(s, 2, title, "Volts", "Amps")
             print("Trying to open")
             f = open("log_curr.txt", "a")
             print("opened")
@@ -575,9 +650,9 @@ def keithley_run_hardcoded(dev):
     with dev[0] as source_dev:
 #        sc =  Serial_Com()
         nplc = 0.02
-        v_start = 0.5
+        v_start = .5
         v_stop = 3
-        n_pts = 40
+        n_pts = 100
         v_step = float( v_stop - v_start )/(n_pts-1)
         set_datetime()
         create_fullstring()
@@ -599,8 +674,53 @@ def keithley_run_hardcoded(dev):
             print("Trying to plot")
             source_split = sourcing.split('_')
             sense_split = sensing.split('_')
-            title = source_split[0] + " vs. " + sense_split[0]
-            plot_data(s[0], s[1], title, source_split[1], sense_split[1])
+            title = "Bit " + str(bit_num) + " " + source_split[0] + " vs. " + sense_split[0]
+            plot_data(s, 2, title, source_split[1], sense_split[1])
+            print("Trying to open")
+            f = open("log.txt", "a")
+            print("opened")
+            write_string = "\n" + full_string + "\n" + str(s) + "\n"
+            #print(write_string)
+            f.write(write_string)
+            f.close()
+        except:
+                print("Failed to get data or something")
+                
+        source_dev.clear_instrument()
+        
+def keithley_run_hardcoded_both(dev):
+    global sourcing
+    global sensing
+    global full_string
+    with dev[0] as source_dev:
+#        sc =  Serial_Com()
+        nplc = 0.02
+        v_start = .5
+        v_stop = 3
+        n_pts = 100
+        v_step = float( v_stop - v_start )/(n_pts-1)
+        set_datetime()
+        create_fullstring()
+		
+        print('programming SOURCE!')
+        for cmd in str2lines( TRY_SWEEP_BOTH.format( **locals() ) ):
+            print(cmd)
+            source_dev.send_cmd(str.encode(cmd))
+        try:
+            print("Reading Now")
+            time.sleep(1)
+            read_resp = source_dev.ask_cmd(":READ?")
+            print("Response: " + str(read_resp))
+            s = np.fromstring( read_resp, sep=',' )
+            print(str(s))
+            print("Splitting Array")
+            s = splitArray(3, s)
+            print(s)
+            print("Trying to plot")
+            source_split = sourcing.split('_')
+            sense_split = sensing.split('_')
+            title = "Bit " + str(bit_num) + " " + source_split[0] + " vs. Resistance and Current"
+            plot_data(s, 3, title, source_split[1], "Ohms/Amps")
             print("Trying to open")
             f = open("log.txt", "a")
             print("opened")
@@ -675,6 +795,7 @@ def keithley_init_and_menu():
             print("\t 3.) Change Strings")
             print("\t 4.) Exit")
             print("\t 5.) Run the hard-coded test (CURRENT). (More added later)")
+            print("\t 6.) Run the hard-coded test (BOTH). (More added later)")
             choice = get_input()
             if choice == 1:
                 keithley_run_hardcoded(smu)
@@ -686,6 +807,8 @@ def keithley_init_and_menu():
                 sys.exit()
             elif choice == 5:
                 keithley_run_hardcoded_current(smu)
+            elif choice == 6:
+                keithley_run_hardcoded_both(smu)
             else:
                 print("Invalid input. Try again.")
         else:
@@ -725,6 +848,8 @@ if __name__ == '__main__':
         elif choice == 3:
             readFromLogFile()
         elif choice == 4:
+            readFromLogFile(True)
+        elif choice == 5:
             sys.exit()
         else:
             print("Invalid input. Try again.")
