@@ -1,8 +1,8 @@
 Keithley 6430
 Atmega328P-AU
 All Cs
-Rectangular - Platinum
-9
+Rectangular - Platinum - 15k
+4
 Active
 Voltage_Volts
 Resistance_Ohms

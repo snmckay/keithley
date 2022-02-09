@@ -112,7 +112,11 @@ class RS232_Keithley24xx(serial.Serial):
         self.run_cmd(str.encode("*RST", encoding='ascii'))  # Reset instrument to default parameters.
         manufacturer, model, serialnum, fw_rev = self.device_info()
 
-        assert b'MODEL 6430' in model, print(model)
+        if(b'6430' in model):
+            assert b'MODEL 6430' in model, print(model)
+        if(b'6485' in model):
+            assert b'MODEL 6485' in model, print(model)
+        return model
 
     def read_ohms(self):
         self.clear_instrument()

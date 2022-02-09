@@ -317,6 +317,22 @@ TRY_SWEEP_RES = """
 :TRIG:COUN {n_pts}
 :FORM:ELEM VOLT, CURR"""
 
+CONST_VOLT_MEAS_BOTH = """
+*RST
+:SYST:AZER ON
+:ARM:COUN 1
+:ARM:SOUR IMM
+:SENS:FUNC 'CURR:DC'
+:SENS:CURR:RANG:AUTO ON
+:SOUR:FUNC VOLT
+:SOUR:VOLT:MODE FIXED
+:SOUR:VOLT:RANG 2
+:SOUR:VOLT:LEV 0.005
+:SOUR:CLE:AUTO ON
+:SOUR:DEL:AUTO ON
+:TRIG:COUN {n_pts}
+:FORM:ELEM VOLT, CURR"""
+
 TRY_SWEEP_BOTH = """
 *RST
 :SYST:AZER ON
@@ -334,6 +350,12 @@ TRY_SWEEP_BOTH = """
 :SOUR:DEL:AUTO ON
 :TRIG:COUN {n_pts}
 :FORM:ELEM VOLT, RES, CURR"""
+
+MEASURE_CURR_6485 = """
+*RST
+:CONF:CURR
+:RANG:AUTO ON
+"""
 
 TRY_SWEEP = """
 *RST
@@ -404,7 +426,7 @@ SOURCE_SETUP = """
 :FORM:ELEM CURR
 :SENS:FUNC 'CURR'
 :SENS:VOLT:NPLC {nplc}
-:SENS:CURR:PROT 0.1
+:SENS:CURR:PROT 0.0001
 :SENS:CURR:RANG 0.1
 
 :SOUR:FUNC VOLT
@@ -688,6 +710,47 @@ def keithley_run_hardcoded(dev):
                 
         source_dev.clear_instrument()
         
+def keithley_6485_run_hardcoded(dev):
+    global sourcing
+    global sensing
+    global full_string
+    read_resp = ""
+    with dev as source_dev:
+        set_datetime()
+        create_fullstring()
+		
+        print('programming SENSE!')
+        for cmd in str2lines( MEASURE_CURR_6485.format( **locals() ) ):
+            print(cmd)
+            source_dev.send_cmd(str.encode(cmd))
+        try:
+            print("Reading Now")
+            time.sleep(1)
+            read_resp = source_dev.ask_cmd(":READ?")
+            print("Response: " + str(read_resp))
+            #s = np.fromstring( read_resp, sep=',' )
+            #print(str(s))
+            #print("Splitting Array")
+            #s = splitArray(2, s)
+            #print(s)
+            #print("Trying to plot")
+            #source_split = sourcing.split('_')
+            #sense_split = sensing.split('_')
+            #title = "Bit " + str(bit_num) + " " + source_split[0] + " vs. " + sense_split[0]
+            #plot_data(s, 2, title, source_split[1], sense_split[1])
+            #print("Trying to open")
+            #f = open("log.txt", "a")
+            #print("opened")
+            #write_string = "\n" + full_string + "\n" + str(s) + "\n"
+            #print(write_string)
+            #f.write(write_string)
+            #f.close()
+        except:
+                print("Failed to get data or something")
+                
+        source_dev.clear_instrument()
+        return read_resp
+        
 def keithley_run_hardcoded_both(dev):
     global sourcing
     global sensing
@@ -697,13 +760,13 @@ def keithley_run_hardcoded_both(dev):
         nplc = 0.02
         v_start = .5
         v_stop = 3
-        n_pts = 100
+        n_pts = 10
         v_step = float( v_stop - v_start )/(n_pts-1)
         set_datetime()
         create_fullstring()
 		
         print('programming SOURCE!')
-        for cmd in str2lines( TRY_SWEEP_BOTH.format( **locals() ) ):
+        for cmd in str2lines( CONST_VOLT_MEAS_BOTH.format( **locals() ) ):
             print(cmd)
             source_dev.send_cmd(str.encode(cmd))
         try:
@@ -780,12 +843,41 @@ def changeStrings():
             return
         else:
             print("Invalid selection. Try again.")
+            
+def check_SMU_for(smu, model):
+    for device in smu:
+        if model in str(device.clear_device()):
+            return True
+    return False
 
 def keithley_init_and_menu():
     choice = -1
+    found_6430 = False
+    found_6485 = False
     smu = RS232_Keithley24xx.discover_connected( baudrate=9600 )
     print(smu)
     print(len(smu))
+    deviceInfo = smu[0].clear_instrument()
+    print("Device Info: " + str(deviceInfo))
+    
+    #Check for devices using the new function
+    if not(b'6430' in deviceInfo):
+        if len(smu) == 1:
+            smu.append(smu[0])
+            found_6485 = True
+        elif len(smu) == 2:
+            found_6430 = True
+            found_6485 = True
+            smu.append(smu[0])
+            smu[0] = smu[1]
+            smu[1] = smu[2]
+            smu.remove(smu[2])
+        else:
+            print("List of SMU devices too long. Exiting.")
+            sys.exit()
+    else:
+        print("6430 found")
+            
     
     while True:
         if len(smu) > 0:
@@ -794,8 +886,9 @@ def keithley_init_and_menu():
             print("\t 2.) Clear settings Keithley 6430")
             print("\t 3.) Change Strings")
             print("\t 4.) Exit")
-            print("\t 5.) Run the hard-coded test (CURRENT). (More added later)")
+            print("\t 5.) Run the hard-coded test (CURRENT). (More added later)")  
             print("\t 6.) Run the hard-coded test (BOTH). (More added later)")
+            print("\t 7.) Run the hard-coded 6485 Current measurement. (More added later)")
             choice = get_input()
             if choice == 1:
                 keithley_run_hardcoded(smu)
@@ -809,6 +902,8 @@ def keithley_init_and_menu():
                 keithley_run_hardcoded_current(smu)
             elif choice == 6:
                 keithley_run_hardcoded_both(smu)
+            elif choice == 7:
+                keithley_6485_run_hardcoded(smu[1])
             else:
                 print("Invalid input. Try again.")
         else:
