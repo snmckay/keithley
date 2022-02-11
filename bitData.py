@@ -65,7 +65,7 @@ class bitData:
                     for data in collection:
                         if float(data) > 0:
                             if data not in averagedX:
-                                print("Adding: " + str(data))
+                                #print("Adding: " + str(data))
                                 averagedX.append(data)
                                 averagedY.append((self.y_data[y_col_pos])[y_pos])
                             else:

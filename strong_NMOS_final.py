@@ -68,7 +68,7 @@ def plot_bitAverage(bitNum, chop=False):
         
     #print("Limits: " + str(xRange) + "/" + str(yRange))
     plt.xlim(int(xRange[0]), int(xRange[1]))
-    plt.ylim(int(yRange[0]), int(yRange[1]))
+    plt.ylim(int(yRange[0]), float(yRange[1]))
 
     plt.title("Bit " + str(bitNum) + " Average Data Plot")
     plt.xlabel("Voltage")
@@ -116,7 +116,8 @@ def plot_bitAverageCombined(chop=False):
         
     #print("Limits: " + str(xRange) + "/" + str(yRange))
     plt.xlim(int(xRange[0]), int(xRange[1]))
-    plt.ylim(int(yRange[0]), int(yRange[1]))
+    #plt.ylim(int(yRange[0]), float(yRange[1]))
+    plt.ylim(int(yRange[0]), 2E-6)
     plt.legend()
 
     plt.title("Average Bits Data Plot")
@@ -149,17 +150,18 @@ def plot_bitData(bitNum, chop=False):
     
     #print("Data for bit " + str(bitNum) + ": " + str(bits[array_location].x_data) + "/" + str(bits[array_location].y_data))
     
-    for xData in bits[array_location].getXData():
+    for xData in (bits[array_location]).getXData():
         yData = (bits[array_location].getYData())[curr_data]
         curr_data = curr_data + 1
-        #print(str(len(xData)), str(len(yData)))
+        print(str(len(xData)), str(len(yData)))
         if ((len(xData) > 5) and (len(xData) == len(yData))):
             #print("Bit/Array " + str(bitNum) + "/" + str(curr_data) + "\n")
-            #print(str(xData), str(yData))
+            print("In the function", str(xData), str(yData))
             plt.scatter(xData, yData)
             
             tempXRange = findRange(xData)
             tempYRange = findRange(yData)
+            print("Y Range: " + str(tempYRange))
             if (float(tempXRange[1]) > 0):
                 if float(xRange[1]) < float(tempXRange[1]):
                     xRange[1] = float(tempXRange[1])
@@ -170,12 +172,13 @@ def plot_bitData(bitNum, chop=False):
                 if float(yRange[0]) > float(tempYRange[0]):
                     yRange[0] = float(tempYRange[0])
     #print("Limits: " + str(xRange) + "/" + str(yRange))
+    print("Final Y Range: " + str(yRange))
     plt.xlim(int(xRange[0]), int(xRange[1]))
-    plt.ylim(int(yRange[0]), int(yRange[1]))
+    plt.ylim(int(yRange[0]), float(yRange[1]))
 
     plt.title("Bit " + str(bitNum) + " Data Plot")
     plt.xlabel("Voltage")
-    plt.ylabel("Resistance")
+    plt.ylabel("Current")
 
     print("Made Plot")
     if chop:
@@ -194,6 +197,8 @@ def plot_bitData(bitNum, chop=False):
 def plot_data(dataIn, dataCount, title, xlabel, ylabel):
     #X = [590,540,740,130,810,300,320,230,470,620,770,250]
     #Y = [32,36,39,52,61,72,77,75,68,57,48,48]
+    print("XData: " + str(dataIn[0]))
+    print("YData: " + str(dataIn[1]))
 
     global dut
     global trans_active
@@ -287,10 +292,8 @@ TRY_SWEEP3 = """
 *RST
 :ARM:COUN 1
 :ARM:SOUR IMM
-:SENS:FUNC \"RES\"
-:SENS:RES:NPLC 1
-:SENS:RES:MODE MAN
-:SENS:CURR:PROT 0.0001
+:SENS:FUNC 'CURR:DC'
+:SENS:CURR:RANG:AUTO ON
 :SOUR:FUNC VOLT
 :SOUR:VOLT:STAR {v_start}
 :SOUR:VOLT:STOP {v_stop}
@@ -301,7 +304,7 @@ TRY_SWEEP3 = """
 :SOUR:SWEEP:SPAC LIN
 :SOUR:DEL 0.001
 :TRIG:COUN {n_pts}
-:FORM:ELEM VOLT, RES, CURR"""
+:FORM:ELEM VOLT, CURR"""
 
 TRY_SWEEP_RES = """
 *RST
@@ -326,8 +329,8 @@ CONST_VOLT_MEAS_BOTH = """
 :SENS:CURR:RANG:AUTO ON
 :SOUR:FUNC VOLT
 :SOUR:VOLT:MODE FIXED
-:SOUR:VOLT:RANG 2
-:SOUR:VOLT:LEV 0.005
+:SOUR:VOLT:RANG 5
+:SOUR:VOLT:LEV 2
 :SOUR:CLE:AUTO ON
 :SOUR:DEL:AUTO ON
 :TRIG:COUN {n_pts}
@@ -511,7 +514,7 @@ def readFromLogFile(chop=False):
                     curr_arrayX = curr_arrayX.split(',')
                     curr_arrayX = np.array(curr_arrayX)
                     curr_arrayX = curr_arrayX.astype(np.float_)
-                    #print(curr_array)
+                    print("CurrArrayX: " + str(curr_arrayX) + "\n")
                     curr_bit_loc = locateBit(curr_bit)
                     
                     
@@ -525,7 +528,7 @@ def readFromLogFile(chop=False):
                     curr_arrayY = curr_arrayY.split(',')
                     curr_arrayY = np.array(curr_arrayY)
                     curr_arrayY = curr_arrayY.astype(np.float_)
-                    #print(str(curr_array) + "\n")
+                    print("Curr_ArrayY: " + str(curr_arrayY) + "\n")
                     
                     #print("Curr Bit Location: " + str(curr_bit_loc))
                     #print(str(curr_array))
@@ -538,7 +541,7 @@ def readFromLogFile(chop=False):
                     #print("Bit " + str(curr_bit) + " lengths: " + str((bits[curr_bit_loc]).x_data) + "/" + str((bits[curr_bit_loc]).y_data))
                 else:
                     pos = myline.find("Bit")
-                    #print(myline[pos+4])
+                    print(myline[pos+4])
                     curr_bit = int(myline[pos+4])
                     if not bitExists(curr_bit):
                         #print("Added")
@@ -680,7 +683,7 @@ def keithley_run_hardcoded(dev):
         create_fullstring()
 		
         print('programming SOURCE!')
-        for cmd in str2lines( TRY_SWEEP.format( **locals() ) ):
+        for cmd in str2lines( TRY_SWEEP3.format( **locals() ) ):
             print(cmd)
             source_dev.send_cmd(str.encode(cmd))
         try:
@@ -777,13 +780,13 @@ def keithley_run_hardcoded_both(dev):
             s = np.fromstring( read_resp, sep=',' )
             print(str(s))
             print("Splitting Array")
-            s = splitArray(3, s)
+            s = splitArray(2, s)
             print(s)
             print("Trying to plot")
             source_split = sourcing.split('_')
             sense_split = sensing.split('_')
-            title = "Bit " + str(bit_num) + " " + source_split[0] + " vs. Resistance and Current"
-            plot_data(s, 3, title, source_split[1], "Ohms/Amps")
+            title = "Bit " + str(bit_num) + " " + source_split[0] + sense_split[0]
+            plot_data(s, 2, title, source_split[1], sense_split[1])
             print("Trying to open")
             f = open("log.txt", "a")
             print("opened")
